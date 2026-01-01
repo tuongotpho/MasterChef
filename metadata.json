@@ -1,0 +1,7 @@
+{
+  "name": "ChefLog AI - Quản Lý Suất Ăn Công Nghiệp",
+  "description": "Ứng dụng dành cho đầu bếp để lưu trữ hình ảnh bữa ăn, quản lý thực đơn hàng tuần/tháng và sử dụng AI để đánh giá dinh dưỡng cũng như gợi ý thực đơn đa dạng cho công nhân.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
