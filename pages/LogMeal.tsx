@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MealRecord, MealDetails } from '../types';
 import { uploadMealImage } from '../services/blobService';
@@ -12,6 +12,8 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showTokenInput, setShowTokenInput] = useState(false);
+  const [tempToken, setTempToken] = useState('');
   
   const [date, setDate] = useState(() => {
     const now = new Date();
@@ -37,6 +39,16 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
     }
   };
 
+  const saveToken = () => {
+    if (tempToken.startsWith('vercel_blob_rw_')) {
+      localStorage.setItem('cheflog_blob_token', tempToken);
+      setShowTokenInput(false);
+      alert("Cấu hình thành công! Hãy thử lưu lại.");
+    } else {
+      alert("Token không hợp lệ. Phải bắt đầu bằng 'vercel_blob_rw_'");
+    }
+  };
+
   const handleSave = async () => {
     if (!imageFile || !name) {
       alert("Hãy chọn ảnh và nhập tên món!");
@@ -45,13 +57,11 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
 
     setIsUploading(true);
     try {
-      // 1. Upload ảnh lên Vercel Blob
       const imageUrl = await uploadMealImage(imageFile);
 
-      // 2. Tạo record với URL ảnh từ cloud
       const details: MealDetails = { 
         ingredients, 
-        nutrition: "Đã phân tích qua ảnh", 
+        nutrition: "Đã lưu trữ", 
         pros, 
         cons 
       };
@@ -59,7 +69,7 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
       const newMeal: MealRecord = {
         id: Date.now().toString(),
         date: new Date(date).toISOString(),
-        image: imageUrl, // Lưu URL thay vì base64
+        image: imageUrl,
         name,
         description,
         details
@@ -67,8 +77,12 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
 
       onSave(newMeal);
       navigate('/history');
-    } catch (error) {
-      alert("Lỗi khi lưu: " + (error instanceof Error ? error.message : "Vui lòng kiểm tra cấu hình Vercel Blob"));
+    } catch (error: any) {
+      if (error.message === "MISSING_TOKEN") {
+        setShowTokenInput(true);
+      } else {
+        alert("Lỗi khi lưu: " + (error instanceof Error ? error.message : "Vui lòng kiểm tra kết nối"));
+      }
     } finally {
       setIsUploading(false);
     }
@@ -76,6 +90,30 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
 
   return (
     <div className="animate-in slide-in-from-bottom-10 duration-500 pb-10">
+      {/* Token Setup Modal */}
+      {showTokenInput && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6">
+          <div className="bg-white p-8 rounded-[2.5rem] w-full max-w-sm space-y-6 animate-in zoom-in-95">
+            <div className="text-center space-y-2">
+              <i className="fas fa-key text-3xl text-orange-500"></i>
+              <h4 className="text-xl font-black uppercase">Cấu hình lưu trữ</h4>
+              <p className="text-xs text-slate-500 font-medium">Bạn cần dán Vercel Blob Token để tải ảnh lên Cloud.</p>
+            </div>
+            <input 
+              type="password" 
+              value={tempToken} 
+              onChange={(e) => setTempToken(e.target.value)}
+              placeholder="vercel_blob_rw_..." 
+              className="w-full p-4 bg-slate-100 rounded-2xl text-xs font-mono outline-none border-2 border-transparent focus:border-orange-500"
+            />
+            <div className="flex flex-col gap-3">
+              <button onClick={saveToken} className="bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Lưu cấu hình</button>
+              <button onClick={() => setShowTokenInput(false)} className="text-slate-400 font-bold text-xs uppercase">Bỏ qua</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
         {/* Upload Area */}
         <div 
@@ -103,14 +141,14 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
           {isUploading && (
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm flex flex-col items-center justify-center text-white">
               <i className="fas fa-circle-notch fa-spin text-3xl mb-2"></i>
-              <p className="text-xs font-black uppercase tracking-widest">Đang tải ảnh lên Cloud...</p>
+              <p className="text-xs font-black uppercase tracking-widest text-center px-6">Đang tải ảnh lên Cloud...</p>
             </div>
           )}
           
           <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
         </div>
 
-        {/* Inputs */}
+        {/* Form Inputs */}
         <div className={`bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 space-y-6 ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tên món chính</label>
@@ -123,19 +161,8 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nguyên liệu & Dinh dưỡng</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nguyên liệu</label>
             <textarea value={ingredients} onChange={(e) => setIngredients(e.target.value)} placeholder="Nguyên liệu chính..." rows={2} className="w-full p-4 bg-slate-50 rounded-2xl text-sm border-none outline-none" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-green-600 uppercase tracking-widest ml-1">Ưu điểm</label>
-              <textarea value={pros} onChange={(e) => setPros(e.target.value)} rows={2} className="w-full p-4 bg-green-50/50 rounded-2xl text-xs border-none outline-none" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-orange-600 uppercase tracking-widest ml-1">Hạn chế</label>
-              <textarea value={cons} onChange={(e) => setCons(e.target.value)} rows={2} className="w-full p-4 bg-orange-50/50 rounded-2xl text-xs border-none outline-none" />
-            </div>
           </div>
 
           <div className="space-y-2">
