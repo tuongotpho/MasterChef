@@ -67,7 +67,7 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
 
   const handleSave = () => {
     if (!image || !name) {
-      alert("Bạn hãy chọn ảnh và đặt tên món ăn nhé!");
+      alert("Vui lòng tải ảnh và nhập tên món ăn");
       return;
     }
 
@@ -96,7 +96,6 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
   return (
     <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-700 pb-20 px-4">
       <div className="flex flex-col lg:flex-row gap-10">
-        {/* Left: Image Selection Section */}
         <div className="w-full lg:w-5/12 lg:sticky lg:top-24 h-fit space-y-6">
             <div 
                 onClick={() => !image && fileInputRef.current?.click()}
@@ -111,7 +110,7 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
                         <button onClick={clearImage} className="bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-lg">
                             <i className="fas fa-trash-can"></i>
                         </button>
-                        <p className="text-white text-xs font-black uppercase tracking-widest">Xóa để chọn ảnh khác</p>
+                        <p className="text-white text-xs font-black uppercase tracking-widest">Xóa ảnh</p>
                     </div>
                   </>
                 ) : (
@@ -120,7 +119,6 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
                         <i className="fas fa-camera text-3xl"></i>
                     </div>
                     <p className="text-slate-600 font-black uppercase text-xs tracking-widest">Tải ảnh bữa ăn</p>
-                    <p className="text-slate-400 text-[10px] mt-2 font-medium">Click vào đây để bắt đầu</p>
                   </div>
                 )}
                 <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
@@ -131,127 +129,78 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave }) => {
                     <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-white">
                         <i className="fas fa-robot"></i>
                     </div>
-                    <div>
-                        <h4 className="font-bold text-sm">Trợ lý Đầu bếp AI</h4>
-                        <p className="text-[10px] text-slate-400">Tự động điền nhanh các đánh giá</p>
-                    </div>
+                    <h4 className="font-bold text-sm">Trợ lý AI</h4>
                 </div>
                 <button 
                     onClick={handleAIAnalysis}
                     disabled={!image || analyzing}
-                    className="w-full bg-white text-slate-900 hover:bg-orange-500 hover:text-white disabled:bg-slate-800 disabled:text-slate-600 font-black py-4 rounded-xl transition-all flex items-center justify-center gap-3 uppercase text-xs tracking-widest active:scale-95"
+                    className="w-full bg-white text-slate-900 hover:bg-orange-500 hover:text-white disabled:bg-slate-800 font-black py-4 rounded-xl transition-all flex items-center justify-center gap-3 uppercase text-xs tracking-widest"
                 >
                     {analyzing ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-wand-magic-sparkles"></i>}
-                    Phân tích ngay
+                    Tự động phân tích
                 </button>
             </div>
         </div>
 
-        {/* Right: Manual Input Form Section */}
         <div className="w-full lg:w-7/12 bg-white rounded-[3rem] shadow-xl border border-slate-100 p-8 sm:p-14 space-y-10">
             <div className="space-y-8">
                 <div className="border-b border-slate-100 pb-6">
-                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">Ghi nhật ký</h3>
-                    <p className="text-slate-400 text-sm font-medium mt-1">Thông tin chi tiết cho suất ăn hôm nay</p>
+                    <h3 className="text-3xl font-black text-slate-900 tracking-tight">Chi tiết bữa ăn</h3>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Thời gian nấu</label>
-                        <input 
-                            type="datetime-local" 
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-bold text-slate-700"
-                        />
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thời gian</label>
+                        <input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-orange-500" />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tên món chính</label>
-                        <input 
-                            type="text" 
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Ví dụ: Cá kho tộ & Rau muống"
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all font-bold text-slate-700"
-                        />
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên món</label>
+                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tên món ăn..." className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold outline-none focus:ring-2 focus:ring-orange-500" />
                     </div>
                 </div>
 
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Đánh giá chung (1-5 sao)</label>
-                    <div className="flex gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100 items-center">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đánh giá (1-5 sao)</label>
+                    <div className="flex gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
                         {[1, 2, 3, 4, 5].map(star => (
-                            <button 
-                                key={star} 
-                                onClick={() => setRating(star)} 
-                                className={`text-3xl transition-all transform hover:scale-125 active:scale-95 ${star <= rating ? 'text-orange-400' : 'text-slate-200'}`}
-                            >
+                            <button key={star} onClick={() => setRating(star)} className={`text-3xl transition-all ${star <= rating ? 'text-orange-400' : 'text-slate-200'}`}>
                                 <i className="fas fa-star"></i>
                             </button>
                         ))}
-                        <span className="ml-auto bg-white px-4 py-1.5 rounded-xl border border-slate-100 text-xs font-black text-orange-500 shadow-sm uppercase tracking-widest">
-                            {rating}/5 Điểm
-                        </span>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6">
+                <div className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nguyên liệu chính</label>
-                        <textarea 
-                            value={ingredients}
-                            onChange={(e) => setIngredients(e.target.value)}
-                            placeholder="Phân cách bằng dấu phẩy..."
-                            rows={2}
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-orange-500/10 outline-none resize-none font-medium"
-                        />
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nguyên liệu (cách nhau bằng dấu phẩy)</label>
+                        <textarea value={ingredients} onChange={(e) => setIngredients(e.target.value)} rows={2} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tóm tắt dinh dưỡng</label>
-                        <input 
-                            type="text" 
-                            value={nutrition}
-                            onChange={(e) => setNutrition(e.target.value)}
-                            placeholder="Khoảng 600kcal, giàu vitamin A..."
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-orange-500/10 outline-none font-medium"
-                        />
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dinh dưỡng</label>
+                        <input type="text" value={nutrition} onChange={(e) => setNutrition(e.target.value)} placeholder="Calo, Đạm..." className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-green-600 uppercase tracking-widest ml-1">Điểm cộng</label>
-                        <textarea value={pros} onChange={(e) => setPros(e.target.value)} placeholder="Ngon, trình bày đẹp..." rows={3} className="w-full px-6 py-4 bg-green-50/50 border border-green-100 rounded-2xl text-sm focus:ring-4 focus:ring-green-500/10 outline-none resize-none font-medium" />
+                        <label className="text-[10px] font-black text-green-600 uppercase tracking-widest">Ưu điểm</label>
+                        <textarea value={pros} onChange={(e) => setPros(e.target.value)} rows={3} className="w-full px-6 py-4 bg-green-50 border border-green-100 rounded-2xl text-sm" />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-orange-600 uppercase tracking-widest ml-1">Hạn chế</label>
-                        <textarea value={cons} onChange={(e) => setCons(e.target.value)} placeholder="Hơi mặn, thiếu rau xanh..." rows={3} className="w-full px-6 py-4 bg-orange-50/50 border border-orange-100 rounded-2xl text-sm focus:ring-4 focus:ring-orange-500/10 outline-none resize-none font-medium" />
+                        <label className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Hạn chế</label>
+                        <textarea value={cons} onChange={(e) => setCons(e.target.value)} rows={3} className="w-full px-6 py-4 bg-orange-50 border border-orange-100 rounded-2xl text-sm" />
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ghi chú bếp trưởng</label>
-                    <textarea 
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Ghi lại phản hồi từ công nhân..."
-                        rows={3}
-                        className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:ring-4 focus:ring-orange-500/10 outline-none resize-none font-medium"
-                    />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ghi chú thêm</label>
+                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm" />
                 </div>
             </div>
 
-            <div className="pt-10 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
-                <button onClick={() => navigate(-1)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-500 py-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all">
-                    Hủy bỏ
-                </button>
-                <button 
-                    onClick={handleSave} 
-                    disabled={!image || !name}
-                    className="flex-[2] bg-slate-900 text-white hover:bg-black disabled:bg-slate-200 py-5 rounded-2xl font-black uppercase text-xs tracking-widest transition-all shadow-xl shadow-slate-200 active:scale-95"
-                >
-                    Lưu Nhật Ký Bữa Ăn
-                </button>
+            <div className="pt-10 border-t border-slate-100 flex gap-4">
+                <button onClick={() => navigate(-1)} className="flex-1 bg-slate-100 py-5 rounded-2xl font-black uppercase text-xs tracking-widest">Hủy</button>
+                <button onClick={handleSave} className="flex-[2] bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Lưu Nhật Ký</button>
             </div>
         </div>
       </div>
