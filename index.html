@@ -22,17 +22,23 @@
         }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@vercel/blob": "https://esm.sh/@vercel/blob@^2.0.0"
-  }
-}
-</script>
+    <script>
+      // Polyfill 'process' to prevent crashes in the browser when using Node-centric libraries like @vercel/blob
+      window.process = { env: {} };
+    </script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "@vercel/blob": "https://esm.sh/@vercel/blob@^2.0.0"
+      }
+    }
+    </script>
+    <!-- Entry point script -->
+    <script type="module" src="./index.tsx"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 overflow-x-hidden">
     <div id="root"></div>
