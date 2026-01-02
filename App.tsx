@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -7,56 +7,41 @@ import LogMeal from './pages/LogMeal';
 import History from './pages/History';
 import Settings from './pages/Settings';
 import { MealRecord } from './types';
-import { fetchDatabaseFromCloud, syncDatabaseToCloud } from './services/blobService';
+import { initAuth, subscribeToMeals, deleteMealFromCloud } from './services/firebaseService';
 
 const App: React.FC = () => {
   const [meals, setMeals] = useState<MealRecord[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  // Khởi tạo: Lấy từ máy trước, sau đó thử lấy từ Cloud
   useEffect(() => {
-    const localData = localStorage.getItem('cheflog_meals');
-    if (localData) {
-      setMeals(JSON.parse(localData));
-    }
-    
-    // Thử đồng bộ từ Cloud nếu có Token
-    if (localStorage.getItem('cheflog_blob_token')) {
-      handleCloudSync();
-    }
+    // 1. Khởi tạo Auth
+    initAuth().then(user => {
+      setUserId(user.uid);
+      
+      // 2. Lắng nghe dữ liệu thời gian thực từ Firestore
+      const unsubscribe = subscribeToMeals(user.uid, (cloudMeals) => {
+        setMeals(cloudMeals);
+        setIsSyncing(false);
+        localStorage.setItem('cheflog_meals', JSON.stringify(cloudMeals));
+      });
+
+      return () => unsubscribe();
+    }).catch(err => {
+      console.error("Firebase Auth Error:", err);
+      setIsSyncing(false);
+    });
   }, []);
 
-  const handleCloudSync = async () => {
-    setIsSyncing(true);
-    const cloudMeals = await fetchDatabaseFromCloud();
-    if (cloudMeals && Array.isArray(cloudMeals)) {
-      // Hợp nhất dữ liệu (ưu tiên cái mới hơn dựa trên ID hoặc timestamp)
-      // Ở đây dùng cách đơn giản: nếu Cloud có thì ghi đè Local để đồng bộ hoàn toàn
-      setMeals(cloudMeals);
-      localStorage.setItem('cheflog_meals', JSON.stringify(cloudMeals));
+  const deleteMeal = async (id: string) => {
+    const mealToDelete = meals.find(m => m.id === id);
+    if (mealToDelete) {
+      try {
+        await deleteMealFromCloud(mealToDelete);
+      } catch (e) {
+        alert("Lỗi khi xóa món ăn khỏi Cloud");
+      }
     }
-    setIsSyncing(false);
-  };
-
-  const saveMeals = async (newMeals: MealRecord[]) => {
-    setMeals(newMeals);
-    localStorage.setItem('cheflog_meals', JSON.stringify(newMeals));
-    // Tự động đẩy lên Cloud
-    await syncDatabaseToCloud(newMeals);
-  };
-
-  const addMeal = (meal: MealRecord) => {
-    saveMeals([meal, ...meals]);
-  };
-
-  const deleteMeal = (id: string) => {
-    if(confirm("Xóa món ăn này khỏi cả máy và Cloud?")) {
-      saveMeals(meals.filter(m => m.id !== id));
-    }
-  };
-
-  const importMeals = (importedMeals: MealRecord[]) => {
-    saveMeals(importedMeals);
   };
 
   return (
@@ -64,9 +49,9 @@ const App: React.FC = () => {
       <Layout isSyncing={isSyncing}>
         <Routes>
           <Route path="/" element={<Dashboard meals={meals} onDelete={deleteMeal} />} />
-          <Route path="/log" element={<LogMeal onSave={addMeal} onTokenSet={handleCloudSync} />} />
+          <Route path="/log" element={<LogMeal userId={userId} />} />
           <Route path="/history" element={<History meals={meals} onDelete={deleteMeal} />} />
-          <Route path="/settings" element={<Settings meals={meals} onImport={importMeals} onSyncRequest={handleCloudSync} />} />
+          <Route path="/settings" element={<Settings meals={meals} userId={userId} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

@@ -1,20 +1,17 @@
 
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MealRecord, MealDetails } from '../types';
-import { uploadMealImage } from '../services/blobService';
+import { MealRecord } from '../types';
+import { uploadMealImage, saveMealToFirestore } from '../services/firebaseService';
 
 interface LogMealProps {
-  onSave: (meal: MealRecord) => void;
-  onTokenSet: () => void;
+  userId: string | null;
 }
 
-const LogMeal: React.FC<LogMealProps> = ({ onSave, onTokenSet }) => {
+const LogMeal: React.FC<LogMealProps> = ({ userId }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [showTokenInput, setShowTokenInput] = useState(false);
-  const [tempToken, setTempToken] = useState('');
   
   const [date, setDate] = useState(() => {
     const now = new Date();
@@ -38,18 +35,11 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave, onTokenSet }) => {
     }
   };
 
-  const saveToken = () => {
-    if (tempToken.startsWith('vercel_blob_rw_')) {
-      localStorage.setItem('cheflog_blob_token', tempToken);
-      setShowTokenInput(false);
-      onTokenSet(); // Kích hoạt tải dữ liệu cũ ngay lập tức
-      alert("Cấu hình thành công! Dữ liệu cũ đang được tải về.");
-    } else {
-      alert("Token không hợp lệ.");
-    }
-  };
-
   const handleSave = async () => {
+    if (!userId) {
+      alert("Đang khởi tạo kết nối Cloud, vui lòng đợi...");
+      return;
+    }
     if (!imageFile || !name) {
       alert("Hãy chọn ảnh và nhập tên món!");
       return;
@@ -57,22 +47,22 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave, onTokenSet }) => {
 
     setIsUploading(true);
     try {
-      const imageUrl = await uploadMealImage(imageFile);
+      // 1. Upload ảnh lên Storage
+      const { url, path } = await uploadMealImage(userId, imageFile);
 
-      const newMeal: MealRecord = {
-        id: Date.now().toString(),
+      // 2. Lưu dữ liệu vào Firestore
+      const newMeal = {
         date: new Date(date).toISOString(),
-        image: imageUrl,
+        image: url,
         name,
         description,
-        details: { ingredients, nutrition: "Cloud synced", pros: "", cons: "" }
+        details: { ingredients, nutrition: "Firebase Synced", pros: "", cons: "" }
       };
 
-      onSave(newMeal);
+      await saveMealToFirestore(userId, newMeal, path);
       navigate('/history');
     } catch (error: any) {
-      if (error.message === "MISSING_TOKEN") setShowTokenInput(true);
-      else alert("Lỗi: " + error.message);
+      alert("Lỗi Firebase: " + error.message);
     } finally {
       setIsUploading(false);
     }
@@ -80,24 +70,6 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave, onTokenSet }) => {
 
   return (
     <div className="animate-in slide-in-from-bottom-10 duration-500 pb-10">
-      {showTokenInput && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="bg-white p-8 rounded-[2.5rem] w-full max-w-sm space-y-6">
-            <div className="text-center space-y-2">
-              <i className="fas fa-key text-3xl text-orange-500"></i>
-              <h4 className="text-xl font-black uppercase">Kết nối Cloud</h4>
-              <p className="text-xs text-slate-500 font-medium">Dán Token để tải lại toàn bộ nhật ký cũ.</p>
-            </div>
-            <input 
-              type="password" value={tempToken} onChange={(e) => setTempToken(e.target.value)}
-              placeholder="vercel_blob_rw_..." 
-              className="w-full p-4 bg-slate-100 rounded-2xl text-xs font-mono outline-none border-2 border-transparent focus:border-orange-500"
-            />
-            <button onClick={saveToken} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest">Kết nối & Tải dữ liệu</button>
-          </div>
-        </div>
-      )}
-
       <div className="space-y-6">
         <div 
           onClick={() => !imagePreview && !isUploading && fileInputRef.current?.click()}
@@ -113,7 +85,7 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave, onTokenSet }) => {
           {isUploading && (
             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm flex flex-col items-center justify-center text-white">
               <i className="fas fa-circle-notch fa-spin text-3xl mb-2"></i>
-              <p className="text-xs font-black uppercase">Đang tải...</p>
+              <p className="text-xs font-black uppercase">Đang tải lên Firebase...</p>
             </div>
           )}
           <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
@@ -131,7 +103,7 @@ const LogMeal: React.FC<LogMealProps> = ({ onSave, onTokenSet }) => {
         </div>
 
         <button onClick={handleSave} disabled={isUploading} className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-all">
-          {isUploading ? 'Đang lưu Cloud...' : 'Lưu Nhật Ký'}
+          {isUploading ? 'Đang lưu Cloud...' : 'Lưu Nhật Ký Firebase'}
         </button>
       </div>
     </div>
