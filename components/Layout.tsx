@@ -34,9 +34,6 @@ const Layout: React.FC<LayoutProps> = ({ children, isSyncing }) => {
           <Link to="/settings" className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 active:bg-slate-200 transition-colors">
              <i className="fas fa-cog text-sm"></i>
           </Link>
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200">
-             <img src="https://picsum.photos/seed/chef/100/100" alt="User" />
-          </div>
         </div>
       </header>
 
