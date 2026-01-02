@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { MealRecord } from '../types';
+import { updateMealInFirestore } from '../services/firebaseService';
 
 interface MealDetailModalProps {
   meal: MealRecord;
@@ -10,6 +11,30 @@ interface MealDetailModalProps {
 
 const MealDetailModal: React.FC<MealDetailModalProps> = ({ meal, onClose, onDelete }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditingDate, setIsEditingDate] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+  const formatForInput = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [tempDate, setTempDate] = useState(formatForInput(meal.date));
+
+  const handleUpdateDate = async () => {
+    setIsUpdating(true);
+    try {
+      const newIsoDate = new Date(tempDate).toISOString();
+      await updateMealInFirestore(meal.id, { date: newIsoDate });
+      setIsEditingDate(false);
+    } catch (error) {
+      alert("Lỗi khi cập nhật ngày: " + (error as Error).message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[60] bg-white animate-in slide-in-from-bottom-10 duration-500 overflow-y-auto">
@@ -68,9 +93,43 @@ const MealDetailModal: React.FC<MealDetailModalProps> = ({ meal, onClose, onDele
         {/* Details Section */}
         <div className="p-8 pb-20 space-y-8 bg-slate-50 rounded-t-[3rem] -mt-8 relative z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.08)]">
           <div className="space-y-2">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {new Date(meal.date).toLocaleString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-            </p>
+            <div className="flex items-center justify-between">
+              {isEditingDate ? (
+                <div className="flex items-center gap-2 w-full">
+                  <input 
+                    type="datetime-local" 
+                    value={tempDate}
+                    onChange={(e) => setTempDate(e.target.value)}
+                    className="flex-1 text-[12px] bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:ring-1 focus:ring-orange-500 font-bold"
+                  />
+                  <button 
+                    onClick={handleUpdateDate}
+                    disabled={isUpdating}
+                    className="w-8 h-8 bg-orange-500 text-white rounded-lg flex items-center justify-center active:scale-90 transition-transform"
+                  >
+                    {isUpdating ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-check"></i>}
+                  </button>
+                  <button 
+                    onClick={() => { setIsEditingDate(false); setTempDate(formatForInput(meal.date)); }}
+                    className="w-8 h-8 bg-slate-200 text-slate-500 rounded-lg flex items-center justify-center active:scale-90 transition-transform"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                    {new Date(meal.date).toLocaleString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <button 
+                    onClick={() => setIsEditingDate(true)}
+                    className="text-orange-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1"
+                  >
+                    <i className="fas fa-pen text-[8px]"></i> Sửa ngày
+                  </button>
+                </>
+              )}
+            </div>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase leading-tight">{meal.name}</h2>
           </div>
 

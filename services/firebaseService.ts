@@ -69,6 +69,14 @@ export const saveMealToFirestore = async (userId: string, meal: Omit<MealRecord,
 };
 
 /**
+ * Cập nhật thông tin món ăn (ví dụ: ngày tháng)
+ */
+export const updateMealInFirestore = async (mealId: string, updates: Partial<MealRecord>) => {
+  const mealRef = doc(db, "weighing_slips", mealId);
+  return await updateDoc(mealRef, updates);
+};
+
+/**
  * Lấy danh sách món ăn thời gian thực
  */
 export const subscribeToMeals = (userId: string, callback: (meals: MealRecord[]) => void) => {
